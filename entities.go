@@ -161,6 +161,15 @@ type SymbolOptionDataV3 struct {
 	StrikePrice   string `json:"strikePrice"`
 }
 
+// SymbolIdentifiersDataV3 params for symbol (api v3)
+type SymboIdentifiers struct {
+	ISIN  string `json:"ISIN"`
+	FIGI  string `json:"FIGI"`
+	CUSIP string `json:"CUSIP"`
+	RIC   string `json:"RIC"`
+	SEDOL string `json:"SEDOL"`
+}
+
 // SymbolV1 model
 type SymbolV1 struct {
 	SymbolOptionData `json:"optionData"`
@@ -183,17 +192,17 @@ type SymbolsV1 []SymbolV1
 // SymbolV2 model
 type SymbolV2 struct {
 	SymbolOptionDataV2 `json:"optionData"`
-	Name               string  `json:"name"`
-	Description        string  `json:"description"`
-	Country            string  `json:"country"`
-	Exchange           string  `json:"exchange"`
-	ID                 string  `json:"id"`
-	Currency           string  `json:"currency"`
-	Mpi                string  `json:"mpi"`
-	Type               string  `json:"type"`
-	Ticker             string  `json:"ticker"`
-	Expiration         float64 `json:"expiration"`
-	Group              string  `json:"group"`
+	Name               string `json:"name"`
+	Description        string `json:"description"`
+	Country            string `json:"country"`
+	Exchange           string `json:"exchange"`
+	ID                 string `json:"id"`
+	Currency           string `json:"currency"`
+	Mpi                string `json:"mpi"`
+	Type               string `json:"type"`
+	Ticker             string `json:"ticker"`
+	Expiration         int64  `json:"expiration"`
+	Group              string `json:"group"`
 }
 
 // SymbolsV2 model
@@ -202,17 +211,19 @@ type SymbolsV2 []SymbolV2
 // SymbolV3 model
 type SymbolV3 struct {
 	SymbolOptionDataV3 `json:"optionData"`
-	Name               string  `json:"name"`
-	Description        string  `json:"description"`
-	Country            string  `json:"country"`
-	Exchange           string  `json:"exchange"`
-	MinPriceIncrement  string  `json:"minPriceIncrement"`
-	Currency           string  `json:"currency"`
-	SymbolType         string  `json:"symbolType"`
-	Ticker             string  `json:"ticker"`
-	Expiration         float64 `json:"expiration"`
-	Group              string  `json:"group"`
-	UnderlyingID       string  `json:"underlyingSymbolId`
+	SymboIdentifiers   `json:"identifiers"`
+	SymbolId           string `json:"symbolId"`
+	Name               string `json:"name"`
+	Description        string `json:"description"`
+	Country            string `json:"country"`
+	Exchange           string `json:"exchange"`
+	MinPriceIncrement  string `json:"minPriceIncrement"`
+	Currency           string `json:"currency"`
+	SymbolType         string `json:"symbolType"`
+	Ticker             string `json:"ticker"`
+	Expiration         int64  `json:"expiration"`
+	Group              string `json:"group"`
+	UnderlyingSymbolId string `json:"underlyingSymbolId`
 }
 
 // SymbolsV3 model
@@ -385,7 +396,7 @@ type CurrencyPos struct {
 
 // Position model
 type Position struct {
-	ID             string `json:"id"`
+	SymbolId       string `json:"symbolId"`
 	SymbolType     string `json:"symbolType"`
 	Currency       string `json:"currency"`
 	Price          string `json:"price"`
@@ -402,10 +413,10 @@ type Summary struct {
 	Currencies []CurrencyPos `json:"currencies"`
 	Positions  []Position    `json:"positions"`
 
-	Account            string `json:"account"`
+	AccountId          string `json:"accountId"`
 	SessionDate        string `json:"sessionDate"`
 	FreeMoney          string `json:"freeMoney"`
-	Timestamp          int    `json:"timestamp"`
+	Timestamp          int64  `json:"timestamp"`
 	NetAssetValue      string `json:"netAssetValue"`
 	MarginUtilization  string `json:"marginUtilization"`
 	MoneyUsedForMargin string `json:"moneyUsedForMargin"`
@@ -429,7 +440,7 @@ type TransactionV1 struct {
 // TransactionsV1 model
 type TransactionsV1 []TransactionV1
 
-//TransactionV2 model
+// TransactionV2 model
 type TransactionV2 TransactionV1
 
 // TransactionsV2 model
