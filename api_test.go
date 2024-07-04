@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	// Replace "github.com/example/package" with the actual package import path
 )
 
 func newMockServer() *httptest.Server {
@@ -1389,7 +1390,7 @@ func TestHTTPApi_GetTicksByTrades(t *testing.T) {
 
 func TestHTTPApi_GetAccountSummary(t *testing.T) {
 	type apiInstance struct{ HTTPApi }
-	u := &Summary{
+	u := &SummaryV3{
 		Currencies: []CurrencyPos{
 			{Code: "EUR", ConvertedValue: "1181995.82", Value: "996770.88"},
 			{Code: "USD", ConvertedValue: "-6197460.15", Value: "-6197460.15"},
@@ -1417,7 +1418,7 @@ func TestHTTPApi_GetAccountSummary(t *testing.T) {
 		name        string
 		apiInstance apiInstance
 		args        args
-		want        *Summary
+		want        *SummaryV3
 		wantErr     bool
 	}{
 		{APIv2, apiInstance{fakeAPIv2}, args{

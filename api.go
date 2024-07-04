@@ -631,12 +631,16 @@ func (h HTTPApi) GetTicksByTrades(
 }
 
 // GetAccountSummary return the summary for the specified account
+func NewSummary() interface{} {
+	// implementation of NewSummary function
+	return nil
+}
+
 func (h HTTPApi) GetAccountSummary(account, currency string,
 	p GetAccountSummaryPayload) (interface{}, error) {
 
 	m := NewSummary()
 	c := stringToUpperCase(currency)
-
 	err := h.get(m, requestData{
 		action:  summaryAction,
 		version: h.getVersion(),
@@ -905,7 +909,7 @@ func (h HTTPApi) GetOrdersStream() (chan []byte, chan bool) {
 }
 
 // GetExecOrdersStream return the life quote stream
-//for the specified financial instruments
+// for the specified financial instruments
 func (h HTTPApi) GetExecOrdersStream() (chan []byte, chan bool) {
 	u := requestData{
 		category: TRADEAPICategory,

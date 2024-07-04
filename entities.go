@@ -58,7 +58,7 @@ func NewOHLCTrades() *OHLCTrades { return new(OHLCTrades) }
 func NewOHLCQuotes() *OHLCQuotes { return new(OHLCQuotes) }
 
 // NewSummary constructor
-func NewSummary() *Summary { return new(Summary) }
+func NewSummaryV3() *SummaryV3 { return new(SummaryV3) }
 
 // NewTransactionsV1 constructor
 func NewTransactionsV1() *TransactionsV1 { return new(TransactionsV1) }
@@ -223,7 +223,7 @@ type SymbolV3 struct {
 	Ticker             string `json:"ticker"`
 	Expiration         int64  `json:"expiration"`
 	Group              string `json:"group"`
-	UnderlyingSymbolId string `json:"underlyingSymbolId`
+	UnderlyingSymbolId string `json:"underlyingSymbolId"`
 }
 
 // SymbolsV3 model
@@ -394,24 +394,25 @@ type CurrencyPos struct {
 	ConvertedValue string `json:"convertedValue"`
 }
 
-// Position model
-type Position struct {
-	SymbolId       string `json:"symbolId"`
-	SymbolType     string `json:"symbolType"`
-	Currency       string `json:"currency"`
-	Price          string `json:"price"`
-	AveragePrice   string `json:"averagePrice"`
-	Quantity       string `json:"quantity"`
-	Value          string `json:"value"`
-	ConvertedValue string `json:"convertedValue"`
-	PNL            string `json:"pnl"`
-	ConvertedPNL   string `json:"convertedPnl"`
+// PositionV3 model
+type PositionV3 struct {
+	SymbolId        string `json:"symbolId"`
+	SymbolType      string `json:"symbolType"`
+	Currency        string `json:"currency"`
+	Price           string `json:"price"`
+	AveragePrice    string `json:"averagePrice"`
+	Quantity        string `json:"quantity"`
+	Value           string `json:"value"`
+	ConvertedValue  string `json:"convertedValue"`
+	PNL             string `json:"pnl"`
+	ConvertedPNL    string `json:"convertedPnl"`
+	AccruedInterest string `json:"accruedInterest"`
 }
 
 // Summary model
-type Summary struct {
+type SummaryV3 struct {
 	Currencies []CurrencyPos `json:"currencies"`
-	Positions  []Position    `json:"positions"`
+	Positions  []PositionV3  `json:"positions"`
 
 	AccountId          string `json:"accountId"`
 	SessionDate        string `json:"sessionDate"`
