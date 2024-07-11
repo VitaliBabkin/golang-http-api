@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -284,24 +283,26 @@ func (h HTTPApi) preparePostPayload(m interface{}) (*bytes.Reader, error) {
 }
 
 func (h HTTPApi) stream(u requestData, stopChan chan bool, outChan chan []byte) {
-	resp, err := h.request(
-		http.MethodGet, h.buildURL(u), h.getAuth(u), emptyPostPayload)
+	resp, err := h.request(http.MethodGet, h.buildURL(u), h.getAuth(u), emptyPostPayload)
+
 	if err != nil {
 		panic(err)
 	}
-	var buf bytes.Buffer
-	g, err := gzip.NewReader(resp.Body)
-	io.TeeReader(g, &buf)
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
 	for {
 		select {
-		default:
-			r, err := ioutil.ReadAll(&buf)
-			if err != nil {
-				panic(err)
-			}
-			outChan <- r
 		case <-stopChan:
 			return
+		default:
+			var rawMessage json.RawMessage
+			if err := decoder.Decode(&rawMessage); err == io.EOF {
+				return
+			} else if err != nil {
+				return
+			}
+			outChan <- rawMessage
 		}
 	}
 }
@@ -333,15 +334,15 @@ func (h HTTPApi) processResponse(resp *http.Response) ([]byte, error) {
 	switch resp.Header.Get(contentEncodingHeader) {
 	case acceptEncoding:
 		g, _ := gzip.NewReader(resp.Body)
-		responseBody, _ = ioutil.ReadAll(g)
+		responseBody, _ = io.ReadAll(g)
 		defer g.Close()
 	default:
-		responseBody, _ = ioutil.ReadAll(resp.Body)
+		responseBody, _ = io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
-			"Response status code - %d \n %s", resp.StatusCode, responseBody)
+			"response status code - %d \n %s", resp.StatusCode, responseBody)
 	}
 	return responseBody, nil
 }
