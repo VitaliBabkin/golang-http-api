@@ -631,16 +631,10 @@ func (h HTTPApi) GetTicksByTrades(
 }
 
 // GetAccountSummary return the summary for the specified account
-func NewSummary() interface{} {
-	// implementation of NewSummary function
-	return nil
-}
-
-func (h HTTPApi) GetAccountSummary(account, currency string,
-	p GetAccountSummaryPayload) (interface{}, error) {
-
-	m := NewSummary()
+func (h HTTPApi) GetAccountSummaryV3(account, currency string, p GetAccountSummaryPayload) (interface{}, error) {
+	m := NewSummaryV3()
 	c := stringToUpperCase(currency)
+
 	err := h.get(m, requestData{
 		action:  summaryAction,
 		version: h.getVersion(),
@@ -718,7 +712,7 @@ func (h HTTPApi) GetOrdersV1(g GetOrdersPayload) (*OrdersV1, error) {
 	u := requestData{
 		action:   ordersAction,
 		version:  APIv1,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 		queryStringParams: QueryStringParams{
 			"limit": g.Limit.getLimit(),
 		},
@@ -739,7 +733,7 @@ func (h HTTPApi) GetOrdersV2(g GetOrdersPayload) (*OrdersV2, error) {
 	u := requestData{
 		action:   ordersAction,
 		version:  APIv2,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 		queryStringParams: QueryStringParams{
 			"limit": g.Limit.getLimit(),
 		},
@@ -760,7 +754,7 @@ func (h HTTPApi) GetOrdersV3(g GetOrdersPayload) (*OrdersV3, error) {
 	u := requestData{
 		action:   ordersAction,
 		version:  APIv3,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 		queryStringParams: QueryStringParams{
 			"limit": g.Limit.getLimit(),
 		},
@@ -782,7 +776,7 @@ func (h HTTPApi) GetOrderV1(orderID string) (*OrderV1, error) {
 		action:     ordersAction,
 		pathParams: orderID,
 		version:    APIv1,
-		category:   TRADEAPICategory,
+		category:   TradeAPICategory,
 	})
 	return m, err
 }
@@ -794,7 +788,7 @@ func (h HTTPApi) GetOrderV2(orderID string) (*OrderV2, error) {
 		action:     ordersAction,
 		pathParams: orderID,
 		version:    APIv2,
-		category:   TRADEAPICategory,
+		category:   TradeAPICategory,
 	})
 	return m, err
 }
@@ -806,7 +800,7 @@ func (h HTTPApi) GetOrderV3(orderID string) (*OrderV3, error) {
 		action:     ordersAction,
 		pathParams: orderID,
 		version:    APIv3,
-		category:   TRADEAPICategory,
+		category:   TradeAPICategory,
 	})
 	return m, err
 }
@@ -817,7 +811,7 @@ func (h HTTPApi) GetActiveOrdersV1() (*OrdersV1, error) {
 	err := h.get(m, requestData{
 		action:   activeOrdersAction,
 		version:  APIv1,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 	})
 	return m, err
 }
@@ -828,7 +822,7 @@ func (h HTTPApi) GetActiveOrdersV2() (*OrdersV2, error) {
 	err := h.get(m, requestData{
 		action:   activeOrdersAction,
 		version:  APIv2,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 	})
 	return m, err
 }
@@ -839,7 +833,7 @@ func (h HTTPApi) GetActiveOrdersV3() (*OrdersV3, error) {
 	err := h.get(m, requestData{
 		action:   activeOrdersAction,
 		version:  APIv3,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 	})
 	return m, err
 }
@@ -849,7 +843,7 @@ func (h HTTPApi) PlaceOrderV1(o *OrderSentTypeV1) error {
 	err := h.post(o, requestData{
 		action:   ordersAction,
 		version:  APIv1,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 	})
 	return err
 }
@@ -859,7 +853,7 @@ func (h HTTPApi) PlaceOrderV2(o *OrderSentTypeV2) error {
 	err := h.post(o, requestData{
 		action:   ordersAction,
 		version:  APIv2,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 	})
 	return err
 }
@@ -869,7 +863,7 @@ func (h HTTPApi) PlaceOrderV3(o *OrderSentTypeV3) error {
 	err := h.post(o, requestData{
 		action:   ordersAction,
 		version:  APIv3,
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 	})
 	return err
 }
@@ -878,7 +872,7 @@ func (h HTTPApi) PlaceOrderV3(o *OrderSentTypeV3) error {
 func (h HTTPApi) CancelOrder(orderID string, c CancelOrderPayload) error {
 	err := h.post(c, requestData{
 		action:     cancelOrder,
-		category:   TRADEAPICategory,
+		category:   TradeAPICategory,
 		pathParams: orderID,
 		version:    h.getVersion(),
 	})
@@ -889,18 +883,18 @@ func (h HTTPApi) CancelOrder(orderID string, c CancelOrderPayload) error {
 func (h HTTPApi) ReplaceOrder(orderID string, r ReplaceOrderPayload) error {
 	err := h.post(r, requestData{
 		action:     replaceOrder,
-		category:   TRADEAPICategory,
+		category:   TradeAPICategory,
 		pathParams: orderID,
 		version:    h.getVersion(),
 	})
 	return err
 }
 
-// GetOrdersStream return the life quote stream
+// GetOrdersStream return the orders stream
 // for the specified financial instruments
 func (h HTTPApi) GetOrdersStream() (chan []byte, chan bool) {
 	u := requestData{
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 		action:   ordersStreamAction,
 		version:  h.getVersion(),
 	}
@@ -912,7 +906,7 @@ func (h HTTPApi) GetOrdersStream() (chan []byte, chan bool) {
 // for the specified financial instruments
 func (h HTTPApi) GetExecOrdersStream() (chan []byte, chan bool) {
 	u := requestData{
-		category: TRADEAPICategory,
+		category: TradeAPICategory,
 		action:   execOrdersStreamAction,
 		version:  h.getVersion(),
 	}
@@ -924,8 +918,8 @@ func (h HTTPApi) GetExecOrdersStream() (chan []byte, chan bool) {
 // for the specified financial instruments
 func (h HTTPApi) GetTradeStream(symbol string) (chan []byte, chan bool) {
 	u := requestData{
-		category:   TRADEAPICategory,
-		action:     tradeStreamAction,
+		category:   TradeAPICategory,
+		action:     feedAction,
 		version:    h.getVersion(),
 		pathParams: symbol,
 	}
@@ -935,11 +929,11 @@ func (h HTTPApi) GetTradeStream(symbol string) (chan []byte, chan bool) {
 
 // GetQuoteStream return the life quote stream
 // for the specified financial instruments
-func (h HTTPApi) GetQuoteStream() (chan []byte, chan bool) {
+func (h HTTPApi) GetQuoteStream(symbol string) (chan []byte, chan bool) {
 	u := requestData{
-		category: TRADEAPICategory,
-		action:   execOrdersStreamAction,
-		version:  h.getVersion(),
+		action:     feedAction,
+		version:    h.getVersion(),
+		pathParams: symbol,
 	}
 	outChan, stopChan := h.runStream(u)
 	return outChan, stopChan
