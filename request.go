@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -37,10 +37,10 @@ const (
 	MDAPICategory string = "md"
 
 	// TRADEAPICategory traders api url prefix
-	TRADEAPICategory string = "trade"
+	TradeAPICategory string = "trade"
 
 	// CurrentAPIVersion default api version
-	CurrentAPIVersion string = APIv2
+	CurrentAPIVersion string = APIv3
 
 	emptyString           string = ""
 	commaSeparator        string = ","
@@ -48,7 +48,8 @@ const (
 	jwtAuthTokenPrefix    string = "Bearer"
 	basicAuthPreffix      string = "Basic"
 	acceptJSON            string = "application/json"
-	acceptStream          string = "application/x-json-stream"
+	acceptStreamJson      string = "application/x-json-stream"
+	acceptStreamEvent     string = "text/event-stream"
 	acceptEncoding        string = "gzip"
 	contentEncodingHeader string = "Content-Encoding"
 	authHeader            string = "Authorization"
@@ -59,9 +60,15 @@ var APIVersions = [3]string{APIv1, APIv2, APIv3}
 
 // Scopes is JWT Auth scopes
 var Scopes = []string{
-	"crossrates", "change", "crossrates", "summary",
-	"symbols", "feed", "ohlc", "orders", "transactions",
+	"symbols",
+	"feed",
+	"summary",
 	"accounts",
+	"change",
+	"orders",
+	"ohlc",
+	"crossrates",
+	"transactions",
 }
 
 // Represents last remember auth token
@@ -111,7 +118,7 @@ func (r requestData) getAPIVersion() string {
 func (r requestData) getCategory() string {
 	switch r.category {
 	case MDAPICategory:
-	case TRADEAPICategory:
+	case TradeAPICategory:
 	case emptyString:
 		return MDAPICategory
 	default:
@@ -127,13 +134,14 @@ type libTransport struct {
 
 // RoundTrip with custom headers setup
 func (t *libTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("Accept", acceptJSON)
-	req.Header.Add("Accept-Encoding", acceptEncoding)
 	if req.Method == http.MethodPost {
 		req.Header.Add("Content-type", acceptJSON)
 	}
 	if strings.Contains(req.URL.Path, "stream") {
-		req.Header.Add("Accept", acceptStream)
+		req.Header.Add("Accept", acceptStreamJson)
+	}
+	if strings.Contains(req.URL.Path, "feed") {
+		req.Header.Add("Accept", acceptStreamJson)
 	}
 	return t.underlyingTransport.RoundTrip(req)
 }
@@ -228,9 +236,8 @@ func (h HTTPApi) getVersion() string {
 	panic(errUndefinedAPIVersionMessage)
 }
 
-func (h HTTPApi) request(
-	method, url string, a IAuth, p *bytes.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, p)
+func (h HTTPApi) request(method, url string, a IAuth, p *bytes.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -238,6 +245,8 @@ func (h HTTPApi) request(
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
 		return nil, err
+	} else if resp.StatusCode != 200 {
+		return nil, errors.New(resp.Status)
 	}
 	return resp, nil
 }
@@ -248,7 +257,7 @@ func (h HTTPApi) buildURL(u requestData) string {
 		"%s/%s/%s/%s", h.baseAPIURL, u.getCategory(), varsion, u.action)
 
 	if len(u.pathParams) > 0 {
-		apiURL = fmt.Sprintf("%s/%s/", apiURL, u.pathParams)
+		apiURL = fmt.Sprintf("%s/%s", apiURL, u.pathParams)
 	}
 	if len(u.queryStringParams) > 0 {
 		qParams := url.Values{}
@@ -284,24 +293,26 @@ func (h HTTPApi) preparePostPayload(m interface{}) (*bytes.Reader, error) {
 }
 
 func (h HTTPApi) stream(u requestData, stopChan chan bool, outChan chan []byte) {
-	resp, err := h.request(
-		http.MethodGet, h.buildURL(u), h.getAuth(u), emptyPostPayload)
+	resp, err := h.request(http.MethodGet, h.buildURL(u), h.getAuth(u), emptyPostPayload)
+
 	if err != nil {
 		panic(err)
 	}
-	var buf bytes.Buffer
-	g, err := gzip.NewReader(resp.Body)
-	io.TeeReader(g, &buf)
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
 	for {
 		select {
-		default:
-			r, err := ioutil.ReadAll(&buf)
-			if err != nil {
-				panic(err)
-			}
-			outChan <- r
 		case <-stopChan:
 			return
+		default:
+			var rawMessage json.RawMessage
+			if err := decoder.Decode(&rawMessage); err == io.EOF {
+				return
+			} else if err != nil {
+				return
+			}
+			outChan <- rawMessage
 		}
 	}
 }
@@ -313,8 +324,7 @@ func (h HTTPApi) runStream(u requestData) (chan []byte, chan bool) {
 	return outChan, stopChan
 }
 
-func (h HTTPApi) fetch(
-	httpMethod string, m interface{}, u requestData, payload *bytes.Reader) error {
+func (h HTTPApi) fetch(httpMethod string, m interface{}, u requestData, payload *bytes.Reader) error {
 
 	resp, err := h.request(httpMethod, h.buildURL(u), h.getAuth(u), payload)
 	if err != nil {
@@ -333,15 +343,15 @@ func (h HTTPApi) processResponse(resp *http.Response) ([]byte, error) {
 	switch resp.Header.Get(contentEncodingHeader) {
 	case acceptEncoding:
 		g, _ := gzip.NewReader(resp.Body)
-		responseBody, _ = ioutil.ReadAll(g)
+		responseBody, _ = io.ReadAll(g)
 		defer g.Close()
 	default:
-		responseBody, _ = ioutil.ReadAll(resp.Body)
+		responseBody, _ = io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
-			"Response status code - %d \n %s", resp.StatusCode, responseBody)
+			"response status code - %d \n %s", resp.StatusCode, responseBody)
 	}
 	return responseBody, nil
 }

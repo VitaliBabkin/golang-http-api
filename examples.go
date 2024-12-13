@@ -37,7 +37,7 @@ func test() {
 		fmt.Print("OK")
 	}
 
-	accSum, err := h.GetAccountSummary("DEW8032.001", "USD",
+	accSum, err := h.GetAccountSummaryV3("DEW8032.001", "USD",
 		GetAccountSummaryPayload{
 			DatetimePayload: DatetimePayload{
 				Datetime: "2020-10-10",
